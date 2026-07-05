@@ -1,0 +1,13 @@
+{% extends "prompts/base.html" %}
+{% block content %}
+<div class="mx-auto max-w-md py-16 text-center">
+  <p class="text-5xl">🏷️</p>
+  <p class="mt-4 text-lg font-medium text-text">确定删除标签「{{ tag.title }}」？</p>
+  <p class="mt-1 text-sm text-text-muted">删除标签不会删除关联的提示词</p>
+  <form method="POST" class="mt-8 flex justify-center gap-3">
+    {% csrf_token %}
+    <button type="submit" class="btn-danger">确认删除</button>
+    <a href="{% url 'tag_detail' tag.pk %}" class="btn-ghost border border-border">取消</a>
+  </form>
+</div>
+{% endblock %}

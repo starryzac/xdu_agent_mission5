@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Java
+target/
+*.class
+*.jar
+!*.mvn/wrapper/*.jar
+
+# Databases
+*.db
+*.mv.db
+*.trace.db
+data/
+
+# Environment
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude memory (local context files)
+.claude/projects/

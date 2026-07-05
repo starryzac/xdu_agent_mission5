@@ -1,0 +1,37 @@
+{% extends "prompts/base.html" %}
+{% block content %}
+<div class="mb-8 flex items-center justify-between">
+  <h2 class="text-2xl font-bold">提示词列表</h2>
+  <a href="{% url 'prompt_create' %}" class="btn-primary inline-flex items-center gap-1.5">+ 新建提示词</a>
+</div>
+
+{% if prompts %}
+  <div class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,420px),1fr))]">
+    {% for p in prompts %}
+      <a href="{% url 'prompt_detail' p.pk %}" class="card group block p-5 no-underline">
+        <div class="mb-3 flex items-start justify-between gap-4">
+          <h3 class="truncate text-base font-semibold text-text group-hover:text-amber-400">{{ p.title }}</h3>
+          <div class="flex shrink-0 items-center gap-3 text-sm">
+            {% if p.rating %}
+              <span class="text-amber-400 font-mono text-xs">{% for _ in "x"|ljust:p.rating %}★{% endfor %}{% for _ in "x"|ljust:5|slice:":-p.rating"|default:"" %}☆{% endfor %}</span>
+            {% endif %}
+            {% if p.version %}<span class="rounded-md bg-white/[0.04] px-2 py-0.5 font-mono text-[11px] text-text-muted">{{ p.version }}</span>{% endif %}
+          </div>
+        </div>
+        <p class="mb-3 line-clamp-2 text-sm text-text-muted">{{ p.content|truncatechars:200 }}</p>
+        <div class="flex flex-wrap items-center gap-2">
+          {% for tag in p.tags.all %}<span class="tag-badge">{{ tag.title }}</span>{% endfor %}
+          <span class="ml-auto text-xs text-text-dim">{{ p.updated_at|date:"Y-m-d" }}</span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="py-20 text-center">
+    <p class="text-5xl">🧪</p>
+    <p class="mt-4 text-lg font-medium text-text-muted">实验室还是空的</p>
+    <p class="mt-1 text-sm text-text-dim">创建第一条提示词，开始你的 AI 实验之旅</p>
+    <a href="{% url 'prompt_create' %}" class="btn-primary mt-6 inline-flex items-center gap-1.5">+ 创建第一条提示词</a>
+  </div>
+{% endif %}
+{% endblock %}

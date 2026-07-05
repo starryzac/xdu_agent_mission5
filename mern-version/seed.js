@@ -1,0 +1,141 @@
+const mongoose = require('mongoose');
+require('dotenv').config();
+
+const Tag = require('./models/Tag');
+const Prompt = require('./models/Prompt');
+
+const MONGODB_URI =
+  process.env.MONGODB_URI || 'mongodb://localhost:27017/prompt-lab';
+
+const tags = [
+  { title: '代码生成', notes: '用于生成各类代码的提示词，包括函数、组件、算法等' },
+  { title: '文案润色', notes: '优化文本表达，使其更流畅、专业、有感染力' },
+  { title: '翻译', notes: '中英文及多语言翻译，可指定风格和领域' },
+  { title: '知识问答', notes: '向模型提问，获取解释、分析和建议' },
+  { title: '角色扮演', notes: '让模型扮演特定角色，如面试官、客服、导师等' },
+  { title: '数据分析', notes: '处理和分析数据的提示词，包括清洗、统计、可视化建议' },
+];
+
+const prompts = [
+  {
+    title: '通用代码生成器',
+    content:
+      '你是一位资深全栈开发者，拥有 10 年以上经验。请根据以下需求生成高质量代码。\n\n要求：\n1. 代码结构清晰，命名规范\n2. 包含必要的错误处理\n3. 关键逻辑添加注释\n4. 优先使用现代语法和最佳实践\n\n需求：{{requirement}}',
+    notes:
+      '第一版效果不错，但对复杂需求的分解能力不足。建议在提需求时尽量拆分步骤，每次只让模型做一件事。DeepSeek 对中文需求理解更好，Claude 对英文和代码风格把控更强。',
+    version: 'v1',
+    rating: 4,
+    runs: [
+      { model: 'deepseek-v4-pro', tokens: 1520, responseTime: 3200 },
+      { model: 'claude-sonnet-5', tokens: 2100, responseTime: 1800 },
+    ],
+  },
+  {
+    title: '文章润色助手',
+    content:
+      '你是一位专业的中文编辑，擅长提升文章的表达质量。请对以下文本进行润色，使其更加流畅、准确、有感染力。\n\n润色原则：\n1. 保持原意不变\n2. 优化句式结构，避免过长或过短的句子\n3. 替换平淡的词汇，但不过度华丽\n4. 确保逻辑通顺，段落衔接自然\n5. 修正语法错误和错别字\n6. 适应目标读者群体：{{audience}}\n\n原文：\n{{text}}',
+    notes:
+      '中文润色效果非常好，尤其是学术和商务场景。英文润色一般，可能是因为系统提示词是中文的，考虑做一个纯英文版本。GPT-4o 的润色比 DeepSeek 更自然，但 DeepSeek 速度快很多。',
+    version: 'v2',
+    rating: 5,
+    runs: [
+      { model: 'deepseek-v4-pro', tokens: 980, responseTime: 2100 },
+      { model: 'claude-sonnet-5', tokens: 1100, responseTime: 2500 },
+      { model: 'gpt-4o', tokens: 1350, responseTime: 4200 },
+    ],
+  },
+  {
+    title: '中英互译专家',
+    content:
+      '你是一位资深翻译，精通中文和英文，擅长在两种语言间进行地道、准确的翻译。\n\n翻译要求：\n1. 翻译结果自然地道，符合目标语言表达习惯\n2. 保留原文的语气和风格（正式/日常/幽默等）\n3. 专业术语翻译准确\n4. 文化特定表达做适当本地化处理\n5. 如果原文有歧义，优先选择最合理的解释并标注\n\n翻译方向：{{direction}}\n领域：{{domain}}\n\n原文：\n{{text}}',
+    notes:
+      '技术文档翻译很精准，文学类翻译偏生硬。加了"领域"参数后改善不少。DeepSeek 的中译英有时会出现中式英语，Claude 好很多。翻译长文时建议分段，否则后半部分质量会下降。',
+    version: 'v1',
+    rating: 4,
+    runs: [
+      { model: 'deepseek-v4-pro', tokens: 850, responseTime: 1800 },
+      { model: 'claude-sonnet-5', tokens: 920, responseTime: 2200 },
+    ],
+  },
+  {
+    title: '前端组件生成器',
+    content:
+      '你是一位资深前端工程师，精通 React + Tailwind CSS。请根据以下描述生成一个可复用的 UI 组件。\n\n要求：\n1. 使用 React 函数组件 + Hooks\n2. 样式使用 Tailwind CSS\n3. 组件接收合理的 props，有 TypeScript 类型（或 JSDoc）\n4. 包含 loading、error、empty 等边界状态\n5. 符合无障碍访问标准（ARIA、键盘导航）\n\n组件描述：{{description}}',
+    notes:
+      '生成质量很高，Tailwind 类名使用准确。需要注意：AI 偶尔会编造不存在的 Tailwind 类名，需要实际运行确认。建议生成后用 Vite 构建一次验证。React 19 的 forwardRef 已不需要，但 AI 有时还是会生成，要手动改掉。',
+    version: 'v3',
+    rating: 5,
+    runs: [
+      { model: 'deepseek-v4-pro', tokens: 2200, responseTime: 4500 },
+      { model: 'claude-sonnet-5', tokens: 1800, responseTime: 2800 },
+      { model: 'claude-opus-4-8', tokens: 2500, responseTime: 5100 },
+    ],
+  },
+  {
+    title: 'Bug 诊断助手',
+    content:
+      '你是一位资深调试工程师。请分析以下错误信息并给出诊断和修复方案。\n\n分析步骤：\n1. 解释错误的直接原因\n2. 追溯可能的根本原因\n3. 给出 2-3 个修复方案（按推荐度排序）\n4. 说明如何避免类似问题\n\n技术栈：{{techstack}}\n错误信息：\n```\n{{error}}\n```\n相关代码：\n```\n{{code}}\n```',
+    notes:
+      '非常实用！对常见错误（依赖冲突、类型错误、空指针等）诊断很准。对框架特定的错误（如 Next.js SSR 问题、React hooks 依赖问题）也能给出针对性的建议。建议提供完整的堆栈信息，而不是只给最后一行。',
+    version: 'v2',
+    rating: 5,
+    runs: [
+      { model: 'deepseek-v4-pro', tokens: 1800, responseTime: 3500 },
+      { model: 'claude-sonnet-5', tokens: 1600, responseTime: 2600 },
+      { model: 'claude-opus-4-8', tokens: 2100, responseTime: 4200 },
+      { model: 'gpt-4o', tokens: 1900, responseTime: 3800 },
+    ],
+  },
+  {
+    title: 'API 文档生成器',
+    content:
+      '你是一位技术文档撰写专家。请根据以下 API 代码自动生成接口文档。\n\n文档格式：\n1. 接口概述（一句话）\n2. 请求方法 + URL\n3. 请求参数（Query/Body/Path）及说明\n4. 响应示例（成功 + 失败各一个）\n5. 错误码说明\n6. 调用示例（curl + JavaScript）\n\n文档风格：{{style}}\n\nAPI 代码：\n```\n{{code}}\n```',
+    notes:
+      '对 Express 和 Django REST 的代码解析很准确，对 Spring Boot 有时会搞混注解。生成的文档可以直接粘贴到 README 或 Swagger 配置里。建议在提示词里明确指定文档风格（简洁/详细/OpenAPI 格式）。',
+    version: 'v1',
+    rating: 4,
+    runs: [
+      { model: 'deepseek-v4-pro', tokens: 1100, responseTime: 2400 },
+      { model: 'claude-sonnet-5', tokens: 950, responseTime: 1900 },
+    ],
+  },
+];
+
+async function seed() {
+  try {
+    await mongoose.connect(MONGODB_URI);
+    console.log('[DB] 连接成功');
+
+    // 清空现有数据
+    await Tag.deleteMany({});
+    await Prompt.deleteMany({});
+    console.log('[Seed] 已清空旧数据');
+
+    // 插入 tags
+    const createdTags = await Tag.insertMany(tags);
+    console.log(`[Seed] 创建了 ${createdTags.length} 个标签`);
+
+    // 分配 tag（轮询分配 2-3 个 tag 给每个 prompt）
+    const promptsWithTags = prompts.map((p, i) => {
+      const numTags = (i % 2) + 2; // 每个 prompt 2-3 个 tag
+      const assignedTags = [];
+      for (let j = 0; j < numTags; j++) {
+        const tagIndex = (i + j) % createdTags.length;
+        assignedTags.push(createdTags[tagIndex]._id);
+      }
+      return { ...p, tags: assignedTags };
+    });
+
+    const createdPrompts = await Prompt.insertMany(promptsWithTags);
+    console.log(`[Seed] 创建了 ${createdPrompts.length} 个提示词`);
+
+    console.log('[Seed] ✅ 种子数据填充完成！');
+    await mongoose.connection.close();
+    process.exit(0);
+  } catch (err) {
+    console.error('[Seed] ❌ 失败:', err.message);
+    process.exit(1);
+  }
+}
+
+seed();

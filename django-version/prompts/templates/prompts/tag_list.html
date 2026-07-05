@@ -1,0 +1,38 @@
+{% extends "prompts/base.html" %}
+{% block content %}
+<h2 class="mb-8 text-2xl font-bold">标签管理</h2>
+
+<!-- Create form -->
+<form method="POST" action="{% url 'tag_create' %}" class="mb-8 rounded-xl card p-5">
+  {% csrf_token %}
+  <h3 class="mb-3 text-sm font-medium text-text-muted">新建标签</h3>
+  <div class="flex gap-3">
+    <input type="text" name="title" placeholder="标签名称，如「代码生成」" maxlength="100" required class="flex-1 px-4 py-2.5 text-sm">
+    <input type="text" name="notes" placeholder="说明：用途、适用场景" required class="flex-[2] px-4 py-2.5 text-sm">
+    <button type="submit" class="btn-primary">创建</button>
+  </div>
+</form>
+
+<!-- Tag list -->
+{% if tags %}
+  <div class="space-y-2">
+    {% for tag in tags %}
+      <div class="card flex items-center gap-4 p-4">
+        <a href="{% url 'tag_detail' tag.pk %}" class="flex min-w-0 flex-1 items-center gap-3 no-underline hover:opacity-80">
+          <span class="shrink-0 rounded-full border border-amber-400/20 bg-amber-400/5 px-3 py-1 text-sm font-medium text-amber-400">{{ tag.title }}</span>
+          <span class="min-w-0 truncate text-sm text-text-muted">{{ tag.notes }}</span>
+        </a>
+        <span class="shrink-0 text-xs text-text-dim">{{ tag.updated_at|date:"Y-m-d" }}</span>
+        <a href="{% url 'tag_edit' tag.pk %}" class="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-text-dim hover:text-text">编辑</a>
+        <a href="{% url 'tag_delete' tag.pk %}" class="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-danger/70 hover:text-danger">删除</a>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="py-20 text-center">
+    <p class="text-5xl">🏷️</p>
+    <p class="mt-4 text-lg font-medium text-text-muted">还没有标签</p>
+    <p class="mt-1 text-sm text-text-dim">使用上方表单创建第一个</p>
+  </div>
+{% endif %}
+{% endblock %}

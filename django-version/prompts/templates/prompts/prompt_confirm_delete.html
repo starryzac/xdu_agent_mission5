@@ -1,0 +1,13 @@
+{% extends "prompts/base.html" %}
+{% block content %}
+<div class="mx-auto max-w-md py-16 text-center">
+  <p class="text-5xl">⚠️</p>
+  <p class="mt-4 text-lg font-medium text-text">确定删除「{{ prompt.title }}」？</p>
+  <p class="mt-1 text-sm text-text-muted">此操作不可撤销</p>
+  <form method="POST" class="mt-8 flex justify-center gap-3">
+    {% csrf_token %}
+    <button type="submit" class="btn-danger">确认删除</button>
+    <a href="{% url 'prompt_detail' prompt.pk %}" class="btn-ghost border border-border">取消</a>
+  </form>
+</div>
+{% endblock %}

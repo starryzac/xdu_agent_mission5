@@ -1,0 +1,106 @@
+{% extends "prompts/base.html" %}
+{% block content %}
+<div class="mb-6">
+  <a href="{% url 'prompt_list' %}" class="text-sm text-text-dim hover:text-text-muted">← 返回列表</a>
+</div>
+
+<div class="card p-6">
+  <!-- Header -->
+  <div class="mb-6 flex items-start justify-between gap-4">
+    <h2 class="text-2xl font-bold">{{ prompt.title }}</h2>
+    <div class="flex shrink-0 items-center gap-4">
+      {% if prompt.rating %}
+        <span class="text-lg text-amber-400">
+          {% for _ in "★"|rjust:prompt.rating %}★{% endfor %}{% with ''|center:5|slice:":-prompt.rating" as rest %}{% for _ in rest %}☆{% endfor %}{% endwith %}
+        </span>
+      {% endif %}
+      {% if prompt.version %}<span class="rounded-md bg-white/[0.04] px-3 py-1 font-mono text-sm text-text-muted">{{ prompt.version }}</span>{% endif %}
+    </div>
+  </div>
+
+  <!-- Tags -->
+  {% if prompt.tags.all %}
+    <div class="mb-5 flex flex-wrap gap-2">
+      {% for tag in prompt.tags.all %}
+        <a href="{% url 'tag_detail' tag.pk %}" class="tag-badge hover:border-amber-400/40 no-underline">{{ tag.title }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Content -->
+  <section class="mb-5">
+    <h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-text-dim">提示词内容</h3>
+    <pre class="rounded-lg bg-bg px-4 py-3 font-mono text-sm text-text">{{ prompt.content }}</pre>
+  </section>
+
+  <!-- Notes -->
+  <section class="mb-6">
+    <h3 class="mb-2 text-xs font-semibold uppercase tracking-wider text-text-dim">反思 & 思路</h3>
+    <p class="rounded-lg bg-bg px-4 py-3 text-sm text-text-muted">{{ prompt.notes }}</p>
+  </section>
+
+  <!-- Runs -->
+  <section class="mb-6">
+    <div class="mb-3 flex items-center justify-between">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-text-dim">
+        运行记录 {% if prompt.runs.all %}<span class="ml-2 font-mono text-teal">{{ prompt.runs.count }}</span>{% endif %}
+      </h3>
+      <button onclick="document.getElementById('run-form').classList.toggle('hidden')" class="text-xs font-medium text-amber-400 hover:text-amber-300">+ 新增记录</button>
+    </div>
+
+    <form id="run-form" method="POST" action="{% url 'run_add' prompt.pk %}" class="hidden mb-4 grid grid-cols-[2fr_1fr_1fr_auto] gap-3 rounded-lg bg-bg p-4">
+      {% csrf_token %}
+      <input type="text" name="model" placeholder="模型名称" required class="px-3 py-2 text-sm">
+      <input type="number" name="tokens" placeholder="Tokens" min="0" value="0" class="px-3 py-2 text-sm">
+      <input type="number" name="response_time" placeholder="耗时 (ms)" min="0" value="0" class="px-3 py-2 text-sm">
+      <button type="submit" class="btn-primary text-sm">添加</button>
+    </form>
+
+    {% if prompt.runs.all %}
+      <div class="overflow-hidden rounded-lg border border-border">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-bg text-text-dim">
+            <tr>
+              <th class="px-4 py-2.5 text-xs font-semibold uppercase">模型</th>
+              <th class="px-4 py-2.5 text-xs font-semibold uppercase">Tokens</th>
+              <th class="px-4 py-2.5 text-xs font-semibold uppercase">耗时</th>
+              <th class="px-4 py-2.5 text-xs font-semibold uppercase">时间</th>
+              <th class="px-4 py-2.5 text-xs font-semibold uppercase"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            {% for run in prompt.runs.all %}
+              <tr class="text-text-muted hover:bg-white/[0.02]">
+                <td class="px-4 py-2.5 font-mono text-xs text-teal">{{ run.model }}</td>
+                <td class="px-4 py-2.5 font-mono text-xs">{{ run.tokens }}</td>
+                <td class="px-4 py-2.5 font-mono text-xs">{{ run.response_time }}ms</td>
+                <td class="px-4 py-2.5 text-xs text-text-dim">{{ run.created_at|date:"Y-m-d H:i" }}</td>
+                <td class="px-4 py-2.5">
+                  <form method="POST" action="{% url 'run_delete' prompt.pk run.pk %}" style="display:inline">
+                    {% csrf_token %}
+                    <button type="submit" class="text-xs text-danger/70 hover:text-danger">删除</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="py-6 text-center text-sm text-text-dim">还没有运行记录 — 点击"+ 新增记录"添加第一次实验</p>
+    {% endif %}
+  </section>
+
+  <!-- Timestamps -->
+  <div class="mb-6 flex gap-6 text-xs text-text-dim">
+    <span>创建于 {{ prompt.created_at|date:"Y-m-d H:i" }}</span>
+    <span>更新于 {{ prompt.updated_at|date:"Y-m-d H:i" }}</span>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex gap-3 border-t border-border pt-6">
+    <a href="{% url 'prompt_edit' prompt.pk %}" class="btn-primary">编辑</a>
+    <a href="{% url 'prompt_delete' prompt.pk %}" class="btn-danger">删除</a>
+  </div>
+</div>
+{% endblock %}

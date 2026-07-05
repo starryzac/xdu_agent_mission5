@@ -1,0 +1,35 @@
+{% extends "prompts/base.html" %}
+{% block content %}
+<div class="mx-auto max-w-lg">
+  <h2 class="mb-8 text-2xl font-bold">{% if is_edit %}编辑标签{% else %}新建标签{% endif %}</h2>
+
+  {% if form.errors %}
+    <div class="mb-6 rounded-lg border border-danger-dim bg-danger/5 p-3 text-sm text-danger" role="alert">
+      {% for field, errors in form.errors.items %}
+        {% for error in errors %}<p>{{ error }}</p>{% endfor %}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="POST" class="space-y-5" novalidate>
+    {% csrf_token %}
+    <div>
+      <label for="id_title" class="mb-1.5 block text-sm font-medium text-text-muted">标签名称 <span class="text-danger">*</span></label>
+      <input type="text" name="title" id="id_title" maxlength="100" required
+             value="{{ form.title.value|default:'' }}"
+             placeholder="如：代码生成"
+             class="w-full px-4 py-2.5 text-sm">
+    </div>
+    <div>
+      <label for="id_notes" class="mb-1.5 block text-sm font-medium text-text-muted">说明 <span class="text-danger">*</span></label>
+      <textarea name="notes" id="id_notes" required rows="3"
+                placeholder="用途、适用场景"
+                class="w-full px-4 py-2.5 text-sm resize-y">{{ form.notes.value|default:'' }}</textarea>
+    </div>
+    <div class="flex gap-3 pt-4">
+      <button type="submit" class="btn-primary">{% if is_edit %}保存修改{% else %}创建标签{% endif %}</button>
+      <a href="{% url 'tag_list' %}" class="btn-ghost border border-border">取消</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
