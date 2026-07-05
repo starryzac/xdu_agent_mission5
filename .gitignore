@@ -34,3 +34,9 @@ Thumbs.db
 
 # Claude memory (local context files)
 .claude/projects/
+
+# Assignment materials (local only)
+*.pptx
+assignmentCN-*.md
+Day5_实验报告模板.md
+writeupCN.md
